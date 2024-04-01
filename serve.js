@@ -251,23 +251,22 @@ app.get('/qrcode', async (req, res) => {
     }
 })
 
-// 数据文件路径
-const dataFilePath = path.join('./data.json');
-
-// 初始化数据数组
-let data = [];
-
-// 从文件加载数据（如果文件存在）
-if (fs.existsSync(dataFilePath)) {
-    data = JSON.parse(fs.readFileSync(dataFilePath, 'utf8'));
-}
-
 
 app.get('/get-source', (req, res) => {
+    // 数据文件路径
+    const dataFilePath = path.join('./data.json');
+
+    // 初始化数据数组
+    let data = [];
+
+    // 从文件加载数据（如果文件存在）
+    if (fs.existsSync(dataFilePath)) {
+        data = JSON.parse(fs.readFileSync(dataFilePath, 'utf8'));
+    }
     res.send(data);
 })
 
-app.post('/add-source', (req,res) => {
+app.post('/add-source', (req, res) => {
     const newItem = req.body;
     data.push(newItem);
     saveDataToFile();
