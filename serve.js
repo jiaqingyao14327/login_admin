@@ -2,6 +2,8 @@ import fs from 'fs'
 import express from 'express'
 import axios from 'axios';
 import cors from 'cors'
+import qrcode from 'qrcode'
+import path from 'path'
 
 const app = express();
 const port = 4000;
@@ -138,20 +140,20 @@ app.post('/login', async (req, res) => {
 app.get('/read-file', (req, res) => {
     const filePath = './data.txt'; // 本地文件路径
     fs.readFile(filePath, 'utf8', (err, data) => {
-      if (err) {
-        res.status(500).send({
-            msg: '错误文件'
-        });
-        return;
-      }
-    //   const linesArray = data.replace('\n', '');
-      res.status(200).send(data);
+        if (err) {
+            res.status(500).send({
+                msg: '错误文件'
+            });
+            return;
+        }
+        //   const linesArray = data.replace('\n', '');
+        res.status(200).send(data);
     });
-  })
+})
 
-  app.get('/clear-file', (req, res) => {
+app.get('/clear-file', (req, res) => {
     const filePath = './data.txt'; // 指定文件路径
-    fs.truncate(filePath, 0, function(err) {
+    fs.truncate(filePath, 0, function (err) {
         if (err) {
             console.error(err);
             res.status(500).send('Error clearing file contents.');
@@ -163,6 +165,105 @@ app.get('/read-file', (req, res) => {
         }
     });
 })
+
+app.post('/phone-fwd', async (req, res) => {
+    const data = req.body;
+    try {
+        const response = await axios.post(
+            'https://api.livelab.com.cn/thirdParty/sms/app/captcha',
+            new URLSearchParams({
+                'phone': data.phone,
+                'type': '1'
+            }),
+            {
+                headers: {
+                    'user-agent': 'Dart/2.19 (dart:io)',
+                    'content-type': 'application/x-www-form-urlencoded;charset=utf-8'
+                }
+            }
+        )
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch data from the target server' });
+    }
+})
+
+app.post('/login-fwd', async (req, res) => {
+    const data = req.body;
+    try {
+        const response = await axios.post(
+            'https://api.livelab.com.cn/auth/app/login/phoneCaptcha',
+            `phone=${data.phone}&captcha=${data.code}&sekyCaptcha&deviceId=AC39A967-C95E-4293-9964-585A7503A29E&deviceType=1&blackBox=qIPHa1711861510JpDdaMpOl08`,
+            {
+                headers: {
+                    'user-agent': 'Dart/2.19 (dart:io)',
+                    'content-type': 'application/x-www-form-urlencoded;charset=utf-8'
+                }
+            }
+        )
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch data from the target server' });
+    }
+})
+
+app.post('/submit-fwd', (req, res) => {
+    const data = req.body;
+    // 处理接收到的数据
+    console.log('Received data:', data);
+    fs.appendFileSync('fwd.txt', `${JSON.stringify(data.token)},\n`, 'utf8', function (err) {
+        if (err) {
+            console.error(err);
+            res.end('Error writing file');
+        } else {
+            res.end('Data received');
+        }
+    });
+
+    // 返回响应
+    res.status(200).send({
+        comments: "成功",
+        statusCode: 200
+    });
+});
+
+app.get('/qrcode', async (req, res) => {
+    const text = req.query.text; // 获取URL参数中的text值
+    try {
+        const image = await qrcode.toDataURL(text); // 生成二维码
+        res.send({ status: 'success', image }); // 返回二维码图片
+    } catch (error) {
+        res.status(500).send({ status: 'error', message: error.message }); // 发生错误时返回
+    }
+})
+
+// 数据文件路径
+const dataFilePath = path.join('./data.json');
+
+// 初始化数据数组
+let data = [];
+
+// 从文件加载数据（如果文件存在）
+if (fs.existsSync(dataFilePath)) {
+    data = JSON.parse(fs.readFileSync(dataFilePath, 'utf8'));
+}
+
+
+app.get('/get-source', (req, res) => {
+    res.send(data);
+})
+
+app.post('/add-source', (req,res) => {
+    const newItem = req.body;
+    data.push(newItem);
+    saveDataToFile();
+    res.status(200).send(newItem);
+})
+
+function saveDataToFile() {
+    fs.writeFileSync(dataFilePath, JSON.stringify(data), 'utf8');
+}
+
 
 // 启动服务器
 app.listen(port, () => {

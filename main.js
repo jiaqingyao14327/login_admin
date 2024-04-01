@@ -45,7 +45,7 @@ function getPhone() {
       (err) => {
         throw err;
       }
-    );
+    )
 }
 
 let ip = "";
@@ -54,6 +54,8 @@ async function createOrder(
   seat_plan_id,
   price,
   session_id,
+  names,
+  sessionName
 ) {
   const data = {
     'src': 'weixin_mini',
@@ -125,16 +127,22 @@ async function createOrder(
   return new Promise((resolve, reject) => {
     request(options, async (error, res, body) => {
       if (!error && res.statusCode == 200) {
+        fs.appendFileSync("请求日志.txt", `${phone}下单--${names}${price}--${sessionName}--${JSON.stringify(body.comments)}\n`, (err) => {
+          if (err) {
+            console.log(err);
+            return;
+          }
+        });
         if (body.statusCode === 200) {
           console.log("下单成功", body.data.orderId);
-          notifyDingDing();
-          getPaySuccess(body.data.unPaidTransactionIds, price);
+          notifyDingDing(sessionName);
+          getPaySuccess(body.data.unPaidTransactionIds, price, sessionName, names);
           resolve(body);
         } else if (
           body.comments.includes("访问次数") ||
           body.comments.includes("该演出过于火爆")
         ) {
-          await getIp();
+          getIp();
           reject("下单失败");
         } else if (
           body.comments.includes("已购买过") ||
@@ -146,14 +154,14 @@ async function createOrder(
         console.log(body.comments);
         reject("下单失败");
       } else {
-        await getIp();
+        getIp();
         reject("下单失败啦");
       }
     });
   });
 }
 
-function getPaySuccess(arr, price) {
+function getPaySuccess(arr, price, sessionName, names) {
   const data = {
     'src': 'weixin_mini',
     'merchantId': '63739735004701000156623a',
@@ -180,7 +188,7 @@ function getPaySuccess(arr, price) {
           await getAudiences(arr);
           fs.appendFileSync(
             "支付宝支付链接.txt",
-            `\n${phone}-${price}-${config.audience_number}张`,
+            `\n${phone}-${names}${price}-${sessionName}-${config.audience_number}张`,
             (err) => {
               if (err) {
                 console.log(err);
@@ -188,6 +196,7 @@ function getPaySuccess(arr, price) {
               }
             }
           );
+          return true
         }
         console.log(res.comments);
         throw Error("获取链接失败");
@@ -226,6 +235,7 @@ function getAudiences(arr) {
     .then(
       (res) => {
         console.log(res);
+        return true
       },
       (err) => {
         throw err;
@@ -245,7 +255,7 @@ function getIp() {
   });
 }
 
-function notifyDingDing() {
+function notifyDingDing(sessionName) {
   fetch(
     "https://sea.pri.ibanyu.com/qtapi/base/alertmanager/dingtalk/person/content/send",
     {
@@ -256,7 +266,7 @@ function notifyDingDing() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        content: `${phone}硬核喜剧下单成功啦，快去付款吧`,
+        content: `${phone}${sessionName}硬核喜剧下单成功啦，快去付款吧`,
         content_type: 1,
         namespace: "你有一笔意外之财的通知",
         receiver_list: ["jiaqingyao14327"],
@@ -492,7 +502,7 @@ function getPreOrder(sessionId, seatPlanIds, price, result) {
 }
 
 
-async function poll(session_id, seatPlan_id, price, names, id, result) {
+async function poll(session_id, seatPlan_id, price, names, sessionName) {
   let MaxCount = config.max_count;
   (async function repeat() {
     if (MaxCount === 0) {
@@ -512,6 +522,8 @@ async function poll(session_id, seatPlan_id, price, names, id, result) {
         seatPlan_id,
         price,
         session_id,
+        names,
+        sessionName
       );
       return true;
     } catch (err) {
@@ -580,17 +592,17 @@ function incrementLastTwoDigits(str) {
   return str;
 }
 
-function generate_code(seatPlanId, priceName, stdSeatPlanId, price) {
+function generate_code(seatPlanId, priceName, stdSeatPlanId, price, sessionsInfo, arr) {
   const arr1 = [{
     id: config.show_id,
     'type': 'purchaseShowLimiter',
-    limitation: sessions[0].showLimit,
+    limitation: sessionsInfo.showLimit,
     limiterId: config.show_id
   }, {
-    id: sessions[0].bizShowSessionId,
+    id: sessionsInfo.bizShowSessionId,
     'type': 'purchaseShowLimiter',
     limitation: 6,
-    limiterId: sessions[0].bizShowSessionId
+    limiterId: sessionsInfo.bizShowSessionId
   }]
   arr.map((item) => {
     arr1.push({
@@ -620,16 +632,16 @@ function generate_code(seatPlanId, priceName, stdSeatPlanId, price) {
             '_shows': [
               {
                 'showId': config.show_id,
-                'stdShowId': sessions[0].stdShowId,
-                'showName': sessions[0].showName,
+                'stdShowId': sessionsInfo.stdShowId,
+                'showName': sessionsInfo.showName,
                 'seatPickType': info.seatPickType
               }
             ],
             '_sessions': [
               {
-                'bizShowSessionId': sessions[0].bizShowSessionId,
-                'stdShowSessionId': sessions[0].stdShowSessionId,
-                'sessionName': sessions[0].sessionName,
+                'bizShowSessionId': sessionsInfo.bizShowSessionId,
+                'stdShowSessionId': sessionsInfo.stdShowSessionId,
+                'sessionName': sessionsInfo.sessionName,
                 'supportSeatPicking': false,
                 'ctSession': false,
                 'ctTag': ''
@@ -652,7 +664,7 @@ function generate_code(seatPlanId, priceName, stdSeatPlanId, price) {
                   showId: config.show_id
                 },
                 session: {
-                  bizShowSessionId: sessions[0].bizShowSessionId
+                  bizShowSessionId: sessionsInfo.bizShowSessionId
                 }
               }
             }),
@@ -667,14 +679,14 @@ function generate_code(seatPlanId, priceName, stdSeatPlanId, price) {
           },
           'selectedShow': {
             'showId': config.show_id,
-            'stdShowId': sessions[0].stdShowId,
-            'showName': sessions[0].sessionName,
+            'stdShowId': sessionsInfo.stdShowId,
+            'showName': sessionsInfo.sessionName,
             'seatPickType': info.seatPickType
           },
           'selectedSession': {
-            'bizShowSessionId': sessions[0].bizShowSessionId,
-            'stdShowSessionId': sessions[0].stdShowSessionId,
-            'sessionName': sessions[0].sessionName,
+            'bizShowSessionId': sessionsInfo.bizShowSessionId,
+            'stdShowSessionId': sessionsInfo.stdShowSessionId,
+            'sessionName': sessionsInfo.sessionName,
             'supportSeatPicking': false,
             'ctSession': false,
             'ctTag': ''
@@ -703,7 +715,9 @@ function generate_code(seatPlanId, priceName, stdSeatPlanId, price) {
       (err) => {
         throw err;
       }
-    )
+    ).catch((err) => {
+      console.log(err)
+    })
 }
 
 function getCodeInfo(code) {
@@ -785,51 +799,35 @@ const sessions = await getSessions()
 console.log('动态获取')
 const info = await getDynamic()
 
-console.log("获取第一场次信息");
-const arr = await getSeatPlans(sessions[0].bizShowSessionId);
+console.log(`一共${sessions.length}个场次`)
 
 async function run() {
-  if (Date.now() + 1800 > new Date(config.target_time)) {
+  if (Date.now() + 1500 > new Date(config.target_time)) {
     // await getIp();
-    // for (let i = 0; i < arr.length; i++) {
-    //   console.log('生成code')
-    //   const info = await generate_code(arr[i].seatPlanId, arr[i].seatPlanName, arr[i].stdSeatPlanId, arr[i].originalPrice)
-    //   await getCodeList(info)
-    //   console.log('获取详细信息')
-    //   const result = await getCodeInfo(info)
-    //   // await getShowUser()
-    //   if (!name) await getName(sessions[0].bizShowSessionId, arr[i].seatPlanId, arr[i].originalPrice, result);
-    //   console.log('获取方式成功～～')
-    //   // await privileges(sessions[0].bizShowSessionId, arr[i].seatPlanId);
-    //   // await getPreOrder(sessions[0].bizShowSessionId, arr[i].seatPlanId, arr[i].originalPrice, result);
-    //   // await getSearch(arr[i].seatPlanId)
-    //   if (!express_fee && config.deliver_method !== "E_TICKET") {
-    //     console.log('获取邮费')
-    //     express_fee = await getExpressPrice(
-    //       address,
-    //       arr[i].seatPlanId,
-    //       arr[i].originalPrice,
-    //       sessions[0].bizShowSessionId,
-    //       result
-    //     );
-    //   }
-    //   poll(sessions[0].bizShowSessionId, arr[i].seatPlanId, arr[i].originalPrice, arr[i].seatPlanName, arr[i].stdSeatPlanId, result);
-    // }
-    // 如果需要指定 就这么写
-    const price = arr.filter((item) => item.originalPrice === 150)
-    console.log('生成code')
-    const info = await generate_code(price[0].seatPlanId, price[0].seatPlanName, price[0].stdSeatPlanId, price[0].originalPrice)
-    await getCodeList(info)
-    console.log('获取详细信息')
-    const result = await getCodeInfo(info)
-    await getShowUser()
-    if (!name) await getName(sessions[0].bizShowSessionId, price[0].seatPlanId, price[0].originalPrice, result);
-    console.log('获取方式成功～～')
-    await privileges(sessions[0].bizShowSessionId, price[0].seatPlanId);
-    await getPreOrder(sessions[0].bizShowSessionId, price[0].seatPlanId, price[0].originalPrice, result);
-    await getSearch(price[0].seatPlanId)
-    console.log('启动～')
-    poll(sessions[0].bizShowSessionId, price[0].seatPlanId, price[0].originalPrice, price[0].seatPlanName, price[0].stdSeatPlanId, result);
+    for (let i = 0; i < sessions.length; i++) {
+      console.log(`获取第${i + 1}场次信息`);
+      const arr = await getSeatPlans(sessions[i].bizShowSessionId);
+      // 如果需要指定 就这么写
+      const price = arr.filter((item) => item.originalPrice === 260)
+      if (price.length > 0) {
+        console.log('生成code')
+        const info = await generate_code(price[0].seatPlanId, price[0].seatPlanName, price[0].stdSeatPlanId, price[0].originalPrice, sessions[i], arr)
+        await getCodeList(info)
+        console.log('获取详细信息')
+        const result = await getCodeInfo(info)
+        await getShowUser()
+        if (!name) await getName(sessions[i].bizShowSessionId, price[0].seatPlanId, price[0].originalPrice, result);
+        console.log('获取方式成功～～')
+        await privileges(sessions[i].bizShowSessionId, price[0].seatPlanId);
+        await getPreOrder(sessions[i].bizShowSessionId, price[0].seatPlanId, price[0].originalPrice, result);
+        await getSearch(price[0].seatPlanId)
+        console.log('启动～')
+        poll(sessions[i].bizShowSessionId, price[0].seatPlanId, price[0].originalPrice, price[0].seatPlanName, sessions[i].sessionName);
+        poll(sessions[i].bizShowSessionId, price[0].seatPlanId, price[0].originalPrice, price[0].seatPlanName, sessions[i].sessionName);
+      } else {
+        console.log('下错订单啦')
+      }
+    }
   } else {
     console.log("时间未开始");
     setTimeout(() => {
