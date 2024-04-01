@@ -264,6 +264,23 @@ function saveDataToFile() {
     fs.writeFileSync(dataFilePath, JSON.stringify(data), 'utf8');
 }
 
+app.get('/clear-fwd', (req, res) => {
+    const filePath = './data.json'; // 指定文件路径
+    fs.writeFileSync(filePath, JSON.stringify([]), 'utf8');
+    const filePaths = './fwd.txt'; // 指定文件路径
+    fs.truncate(filePaths, 0, function (err) {
+        if (err) {
+            console.error(err);
+            res.status(500).send('Error clearing file contents.');
+        } else {
+            res.status(200).send({
+                comments: "成功",
+                statusCode: 200
+            });
+        }
+    });
+})
+
 
 // 启动服务器
 app.listen(port, () => {
