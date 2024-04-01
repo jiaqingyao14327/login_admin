@@ -188,6 +188,20 @@ app.post('/phone-fwd', async (req, res) => {
     }
 })
 
+app.get('/read-fwd', (req, res) => {
+    const filePath = './fwd.txt'; // 本地文件路径
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            res.status(500).send({
+                msg: '错误文件'
+            });
+            return;
+        }
+        //   const linesArray = data.replace('\n', '');
+        res.status(200).send(data);
+    });
+})
+
 app.post('/login-fwd', async (req, res) => {
     const data = req.body;
     try {
