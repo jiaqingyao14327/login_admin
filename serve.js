@@ -280,6 +280,7 @@ function saveDataToFile() {
 
 app.get('/clear-fwd', (req, res) => {
     const filePath = './data.json'; // 指定文件路径
+    fs.truncate(filePath, 0);
     fs.writeFileSync(filePath, JSON.stringify([]), 'utf8');
     const filePaths = './fwd.txt'; // 指定文件路径
     fs.truncate(filePaths, 0, function (err) {
