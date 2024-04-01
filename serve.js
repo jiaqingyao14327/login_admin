@@ -6,7 +6,7 @@ import qrcode from 'qrcode'
 import path from 'path'
 
 const app = express();
-const port = 4000;
+const port = 80;
 
 // 解析JSON请求体
 app.use(express.json());
