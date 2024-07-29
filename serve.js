@@ -256,10 +256,8 @@ app.get('/qrcode', async (req, res) => {
 // 初始化数据数组
 let data = [];
 
-let source = ''
-
 app.get('/get-source', (req, res) => {
-    source = req.query.source;
+    const source = req.query.source;
     const dataFilePath = path.join(`./data-${source}.json`);
     // 从文件加载数据（如果文件存在）
     if (fs.existsSync(dataFilePath)) {
@@ -281,7 +279,8 @@ function saveDataToFile(dataFilePath) {
 }
 
 app.get('/clear-fwd', (req, res) => {
-    const filePath = './data.json'; // 指定文件路径
+    const source = req.query.source;
+    const filePath = `./data-${source}.json`; // 指定文件路径
     fs.writeFileSync(filePath, JSON.stringify([]), 'utf8');
     const filePaths = './fwd.txt'; // 指定文件路径
     fs.truncate(filePaths, 0, function (err) {
