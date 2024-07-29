@@ -8,27 +8,32 @@ import fetch from "node-fetch";
 import fs from "fs";
 
 // 配置用户名和密码
-let username = "d2993484659";
-let password = "155zv3zf";
+let username = "d2398362891";
+let password = "3j5rklnm";
 
 const token = process.env.token;
+const userPhone = process.env.phone;
 let name = "E_TICKET";
 
 const headers = {
-  "content-type": "application/json",
-  src: "weixin_mini",
-  merchantId: "63739735004701000156623a",
-  "channel-id": "6461b2dbe132220001a024de",
-  ver: "4.1.3",
+  'Host': '6639d73239137d0001749e04.caiyicloud.com',
+  'Accept': '*/*',
+  'merchant-id': '6639d73239137d0001749e04',
   'src': 'weixin_mini',
-  'terminal-src': 'WEIXIN_MINI',
-  "access-token": token,
-  'Referer': 'https://servicewechat.com/wx459c905b59f92c86/34/page-frame.html',
+  'channel-id': '663c7e38f127a7e5d51ac811',
+  'Accept-Language': 'zh-CN,zh-Hans;q=0.9',
+  'Content-Type': 'application/json',
+  'ver': '4.10.1',
+  'access-token': token,
+  'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E217 MicroMessenger/6.8.0(0x16080000) NetType/WIFI Language/en Branch/Br_trunk MiniProgramEnv/Mac',
+  'Referer': 'https://servicewechat.com/wx43a9293545dba943/6/page-frame.html',
+  'Connection': 'keep-alive',
+  'terminal-src': 'WEIXIN_MINI'
 };
 
 function getPhone() {
   return fetch(
-    "https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/user/buyer/v3/profile?src=H5&ver=3.3.5",
+    "https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/user/buyer/v3/profile?src=H5&ver=3.3.5",
     {
       headers: {
         ...headers,
@@ -59,21 +64,22 @@ async function createOrder(
 ) {
   const data = {
     'src': 'weixin_mini',
-    'merchantId': '63739735004701000156623a',
-    'ver': '4.1.3',
-    'appId': 'wx459c905b59f92c86',
+    'merchantId': '6639d73239137d0001749e04',
+    'channelId': '663c7e38f127a7e5d51ac811',
+    'ver': '4.10.1',
+    'appId': 'wx43a9293545dba943',
     locationParam: {
-      locationCityId: address,
+      locationCityId: "1101",
     },
     paymentParam: {
-      totalAmount: price * config.audience_number + '.00',
       payAmount: price * config.audience_number + '.00',
+      totalAmount: price * config.audience_number + '.00',
     },
     priceItemParam: [
       {
         applyTickets: [],
         priceItemName: "票款总额",
-        priceItemVal: price * config.audience_number,
+        priceItemVal: price * config.audience_number + '.00',
         priceItemType: "TICKET_FEE",
         priceItemSpecies: "SEAT_PLAN",
         direction: "INCREASE",
@@ -83,6 +89,9 @@ async function createOrder(
     items: [
       {
         sku: {
+          // seatPlanId: seat_plan_id,
+          // sessionId: session_id,
+          // showId: config.show_id,
           skuId: seat_plan_id,
           skuType: "SINGLE",
           ticketPrice: price + '.00',
@@ -92,17 +101,19 @@ async function createOrder(
         spu: {
           showId: config.show_id,
           sessionId: session_id,
+          'promotionVersionHash': 'EMPTY_PROMOTION_HASH',
         },
-        deliverMethod: name
+        deliverMethod: name,
       },
     ],
-    priorityId: '',
     many2OneAudience: {},
     addressParam: {},
   };
+
+
   let options = ip
     ? {
-      url: "https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/trade/buyer/order/v5/create_order",
+      url: "https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/trade/buyer/order/v5/create_order",
       headers: {
         ...headers,
       },
@@ -117,7 +128,7 @@ async function createOrder(
       json: data,
     }
     : {
-      url: "https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/trade/buyer/order/v5/create_order",
+      url: "https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/trade/buyer/order/v5/create_order",
       headers: {
         ...headers,
       },
@@ -127,22 +138,22 @@ async function createOrder(
   return new Promise((resolve, reject) => {
     request(options, async (error, res, body) => {
       if (!error && res.statusCode == 200) {
-        fs.appendFileSync("请求日志.txt", `${phone}下单--${names}${price}--${sessionName}--${JSON.stringify(body.comments)}\n`, (err) => {
+        fs.appendFileSync("请求日志.txt", `${userPhone}下单--${names}${price}--${sessionName}--${JSON.stringify(body.comments)}\n`, (err) => {
           if (err) {
             console.log(err);
             return;
           }
         });
         if (body.statusCode === 200) {
-          console.log("下单成功", body.data.orderId);
+          console.log("下单成功", userPhone);
           notifyDingDing(sessionName);
           getPaySuccess(body.data.unPaidTransactionIds, price, sessionName, names);
           resolve(body);
         } else if (
-          body.comments.includes("访问次数") ||
+          body.comments.includes("下单操作过于频繁，请稍后再试") ||
           body.comments.includes("该演出过于火爆")
         ) {
-          getIp();
+          // await getIp();
           reject("下单失败");
         } else if (
           body.comments.includes("已购买过") ||
@@ -154,7 +165,8 @@ async function createOrder(
         console.log(body.comments);
         reject("下单失败");
       } else {
-        getIp();
+        time = null
+        await getIp();
         reject("下单失败啦");
       }
     });
@@ -164,15 +176,16 @@ async function createOrder(
 function getPaySuccess(arr, price, sessionName, names) {
   const data = {
     'src': 'weixin_mini',
-    'merchantId': '63739735004701000156623a',
-    'ver': '4.1.3',
-    'appId': 'wx459c905b59f92c86',
+    'merchantId': '6639d73239137d0001749e04',
+    'channelId': '663c7e38f127a7e5d51ac811',
+    'ver': '4.10.1',
+    'appId': 'wx43a9293545dba943',
     transactionIds: arr,
     platform: "WEIXIN_MINI",
     browserType: "OTHER",
   };
   return fetch(
-    "https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/trade/buyer/v3/payments/cashiers",
+    "https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/trade/buyer/v3/payments/cashiers",
     {
       method: "POST",
       headers: {
@@ -188,7 +201,7 @@ function getPaySuccess(arr, price, sessionName, names) {
           await getAudiences(arr);
           fs.appendFileSync(
             "支付宝支付链接.txt",
-            `\n${phone}-${names}${price}-${sessionName}-${config.audience_number}张`,
+            `\n${userPhone}-${names}${price}-${sessionName}-${config.audience_number}张`,
             (err) => {
               if (err) {
                 console.log(err);
@@ -210,7 +223,7 @@ function getPaySuccess(arr, price, sessionName, names) {
 function getAudiences(arr) {
   const data = {
     'src': 'weixin_mini',
-    'merchantId': '63739735004701000156623a',
+    'merchantId': '6639d73239137d0001749e04',
     'ver': '4.1.3',
     'appId': 'wx459c905b59f92c86',
     transactionIds: arr,
@@ -222,7 +235,7 @@ function getAudiences(arr) {
     returnUrl: "",
   };
   return fetch(
-    "https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/trade/buyer/v3/payments/pay",
+    "https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/trade/buyer/v3/payments/pay",
     {
       method: "POST",
       headers: {
@@ -243,16 +256,26 @@ function getAudiences(arr) {
     );
 }
 
+const expiryTime = 60 * 1000;
+let time = null
+
 function getIp() {
+  const nowDate = Date.now();
+  if (nowDate - time < expiryTime) {
+    return;
+  }
   console.log("获取ip地址");
   return axios({
-    url: "https://dps.kdlapi.com/api/getdps/?secret_id=opi303b2q0v1as6wemfs&num=1&signature=f0unfjb3pn7f8ggl38yrln1k27e17kw0&pt=1&dedup=1&sep=1",
+    url: "https://dps.kdlapi.com/api/getdps/?secret_id=oziq7w1qds4yzdlmu95n&signature=82n38vssej3y6rqbj9b7ybtmkznv39xu&num=1&pt=1&format=text&sep=1&dedup=1",
     method: "get",
   }).then((res) => {
-    console.log(res.data);
-    ip = res.data;
-    return true;
-  });
+    if (Object.prototype.toString.call(res.data) !== '[object Object]') {
+      time = Date.now()
+      ip = res.data;
+    }
+  }).catch((err) => {
+    console.log(err)
+  });;
 }
 
 function notifyDingDing(sessionName) {
@@ -266,7 +289,7 @@ function notifyDingDing(sessionName) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        content: `${phone}${sessionName}硬核喜剧下单成功啦，快去付款吧`,
+        content: `${userPhone}----${sessionName}硬核喜剧下单成功啦，快去付款吧`,
         content_type: 1,
         namespace: "你有一笔意外之财的通知",
         receiver_list: ["jiaqingyao14327"],
@@ -276,10 +299,41 @@ function notifyDingDing(sessionName) {
   );
 }
 
+function getAudienceList() {
+  return fetch(
+    "https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/user/buyer/v3/user_audiences?idTypes=ID_CARD,PASSPORT,MAINLAND_TRAVEL_PERMIT_TAIWAN,MAINLAND_TRAVEL_PERMIT_HK_MC&length=50&offset=0&src=weixin_mini&merchantId=6639d73239137d0001749e04&ver=3.15.1&appId=wx459c905b59f92c86",
+    {
+      headers: {
+        ...headers,
+      },
+    }
+  )
+    .then((res) => res.json())
+    .then(
+      (res) => {
+        if (res.statusCode === 200) {
+          const audiencesInfo = res.data.slice(0, config.audience_number);
+          audiencesInfo.forEach((user) => {
+            console.log(`观影人:${user.name}`);
+          });
+          return audiencesInfo;
+        } else {
+          console.log("观影人信息获取失败:");
+          console.log(`code:${res.statusCode}, message: ${res.comments}`);
+          throw Error("观影人信息获取失败");
+        }
+      },
+      (err) => {
+        throw err;
+      }
+    );
+}
 
-console.log('获取项目Id')
-const generateId = [1, 2].map((i) => ({
+console.log("正在获取观影人信息");
+const audiences = await getAudienceList();
+const generateId = audiences.map((item) => ({
   id: parseInt(new Date().getTime() / 1000).toString() + (new Date().getTime() % 1000).toString() + '1000000' + (Math.floor(Math.random() * 25 + 1)).toString().padStart(2, '0'),
+  audienceId: item.id,
 }))
 
 let express_fee = "";
@@ -289,7 +343,7 @@ let venueId = "";
 function getName(session_id, seat_plan_id, price, result) {
   const data = {
     'src': 'weixin_mini',
-    'merchantId': '63739735004701000156623a',
+    'merchantId': '6639d73239137d0001749e04',
     'ver': '4.1.3',
     'appId': 'wx459c905b59f92c86',
     'priorityId': '',
@@ -313,7 +367,7 @@ function getName(session_id, seat_plan_id, price, result) {
   };
 
   return fetch(
-    "https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/trade/buyer/order/v5/pre_order",
+    "https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/trade/buyer/order/v5/pre_order",
     {
       headers: {
         ...headers,
@@ -343,22 +397,14 @@ function getName(session_id, seat_plan_id, price, result) {
 }
 
 function getSessions() {
-  return fetch(`https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/show/pub/v5/show/${config.show_id}/sessions?src=H5&ver=3.3.5&source=FROM_QUICK_ORDER&isQueryShowBasicInfo=true`, {
+  return fetch(`https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/show/pub/v3/show/${config.show_id}/sessions_from_marketing_countdown?src=weixin_mini&merchantId=6639d73239137d0001749e04&channelId=663c7e38f127a7e5d51ac811&ver=4.10.1&appId=wx43a9293545dba943`, {
     headers: {
-      "content-type": "application/json",
-      src: "weixin_mini",
-      merchantId: "63739735004701000156623a",
-      "channel-id": "6461b2dbe132220001a024de",
-      ver: "3.15.1",
-      'src': 'weixin_mini',
-      'terminal-src': 'WEIXIN_MINI',
-      "access-token": token,
-      referer: "https://servicewechat.com/wx459c905b59f92c86/30/page-frame.html",
+      ...headers
     }
   }).then((res) => res.json()).then(
     (res) => {
       if (res.statusCode === 200) {
-        return res.data;
+        return res.data.sessionVOs;
       }
       console.log(res)
       throw Error("获取方式失败");
@@ -371,7 +417,7 @@ function getSessions() {
 
 function showBuyer() {
   return fetch(
-    `https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/show/buyer/v3/shows/${config.show_id}/seat_plan_age_limit_list?src=weixin_mini&merchantId=6267a80eed218542786f1494&ver=3.15.1&appId=wxad60dd8123a62329&showId=${config.show_id}`,
+    `https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/show/buyer/v3/shows/${config.show_id}/seat_plan_age_limit_list?src=weixin_mini&merchantId=6267a80eed218542786f1494&ver=3.15.1&appId=wxad60dd8123a62329&showId=${config.show_id}`,
     {
       headers: {
         ...headers,
@@ -394,7 +440,7 @@ function showBuyer() {
 
 function privileges(session_id, seat_plan_id) {
   return fetch(
-    "https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/user/buyer/order/v3/privileges",
+    "https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/user/buyer/order/v3/privileges",
     {
       method: "POST",
       headers: {
@@ -402,7 +448,7 @@ function privileges(session_id, seat_plan_id) {
       },
       body: JSON.stringify({
         'src': 'weixin_mini',
-        'merchantId': '63739735004701000156623a',
+        'merchantId': '6639d73239137d0001749e04',
         'ver': '4.1.3',
         'appId': 'wx459c905b59f92c86',
         itemList: [
@@ -432,7 +478,7 @@ function privileges(session_id, seat_plan_id) {
 
 function getPreOrder(sessionId, seatPlanIds, price, result) {
   return fetch(
-    "https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/show/buyer/v5/coupons/pre_order",
+    "https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/show/buyer/v5/coupons/pre_order",
     {
       method: "POST",
       headers: {
@@ -440,7 +486,7 @@ function getPreOrder(sessionId, seatPlanIds, price, result) {
       },
       body: JSON.stringify({
         'src': 'weixin_mini',
-        'merchantId': '63739735004701000156623a',
+        'merchantId': '6639d73239137d0001749e04',
         'ver': '4.1.3',
         'appId': 'wx459c905b59f92c86',
         preOrderCouponPackageRequests: [
@@ -516,6 +562,7 @@ async function poll(session_id, seatPlan_id, price, names, sessionName) {
     MaxCount--;
     try {
       // const blockBox = await getMofen()
+      // await getIp();
       console.log("创建订单");
       await createOrder(
         '1101',
@@ -542,7 +589,7 @@ async function sleep(second) {
 
 
 function getSearch(seatPlan_id) {
-  return fetch(`https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/trade/buyer/v3/spus/tied_sale_search?src=weixin_mini&merchantId=63739735004701000156623a&ver=4.1.3&appId=wx459c905b59f92c86&length=1000&offset=0&bizShowIdList=${config.show_id}&bizSeatPlanIds=${seatPlan_id}`, {
+  return fetch(`https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/trade/buyer/v3/spus/tied_sale_search?src=weixin_mini&merchantId=6639d73239137d0001749e04&ver=4.1.3&appId=wx459c905b59f92c86&length=1000&offset=0&bizShowIdList=${config.show_id}&bizSeatPlanIds=${seatPlan_id}`, {
     headers: {
       ...headers
     }
@@ -561,7 +608,7 @@ function getSearch(seatPlan_id) {
 }
 
 function getSeatPlans(session) {
-  return fetch(`https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/show/pub/v3/show/${config.show_id}/show_session/${session}/seat_plans_from_marketing_countdown?src=weixin_mini&merchantId=63739735004701000156623a&ver=4.1.3&appId=wx459c905b59f92c86`, {
+  return fetch(`https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/show/pub/v3/show/${config.show_id}/show_session/${session}/seat_plans_from_marketing_countdown?src=weixin_mini&merchantId=6639d73239137d0001749e04&ver=4.1.3&appId=wx459c905b59f92c86`, {
     headers: {
       ...headers
     }
@@ -612,14 +659,14 @@ function generate_code(seatPlanId, priceName, stdSeatPlanId, price, sessionsInfo
       limiterId: item.seatPlanId
     })
   })
-  return fetch('https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/home/pub/v3/wxapps/short_codes/generate_code', {
+  return fetch('https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/home/pub/v3/wxapps/short_codes/generate_code', {
     method: 'POST',
     headers: {
       ...headers
     },
     body: JSON.stringify({
       'src': 'weixin_mini',
-      'merchantId': '63739735004701000156623a',
+      'merchantId': '6639d73239137d0001749e04',
       'ver': '4.1.3',
       'appId': 'wx459c905b59f92c86',
       'scene': {
@@ -721,7 +768,7 @@ function generate_code(seatPlanId, priceName, stdSeatPlanId, price, sessionsInfo
 }
 
 function getCodeInfo(code) {
-  return fetch(`https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/home/pub/v3/wxapps/short_codes/code/${code}?src=weixin_mini&merchantId=63739735004701000156623a&ver=4.1.3&appId=wx459c905b59f92c86`, {
+  return fetch(`https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/home/pub/v3/wxapps/short_codes/code/${code}?src=weixin_mini&merchantId=6639d73239137d0001749e04&ver=4.1.3&appId=wx459c905b59f92c86`, {
     headers: {
       ...headers
     }
@@ -740,10 +787,10 @@ function getCodeInfo(code) {
 }
 
 function getCodeList(info) {
-  return fetch(`https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/home/pub/v5/shop/configs?src=weixin_mini&ver=4.1.3&cityId=3101&miniAppType=WEIXIN_PUBLIC`, {
+  return fetch(`https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/home/pub/v5/shop/configs?src=weixin_mini&ver=4.1.3&cityId=3101&miniAppType=WEIXIN_PUBLIC`, {
     headers: {
       ...headers,
-      'Referer': `https://63739735004701000156623a.caiyicloud.com/order/confirm?cpId=${info}`,
+      'Referer': `https://6639d73239137d0001749e04.caiyicloud.com/order/confirm?cpId=${info}`,
     }
   }).then((res) => res.json())
     .then(
@@ -760,7 +807,7 @@ function getCodeList(info) {
 }
 
 function getShowUser() {
-  return fetch(`https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/show/buyer/v5/show/${config.show_id}/show_user?src=weixin_mini&merchantId=63739735004701000156623a&channelId=6461b2dbe132220001a024de&ver=4.1.3&appId=wx459c905b59f92c86`, {
+  return fetch(`https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/show/buyer/v5/show/${config.show_id}/show_user?src=weixin_mini&merchantId=6639d73239137d0001749e04&channelId=663c7e38f127a7e5d51ac811&ver=4.1.3&appId=wx459c905b59f92c86`, {
     headers: {
       ...headers
     }
@@ -780,7 +827,7 @@ function getShowUser() {
 }
 
 function getDynamic() {
-  return fetch(`https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/show/pub/v5/show/${config.show_id}/dynamic?src=weixin_mini&merchantId=63739735004701000156623a&ver=4.1.3&appId=wx459c905b59f92c86&source=FROM_QUICK_ORDER`, {
+  return fetch(`https://6639d73239137d0001749e04.caiyicloud.com/cyy_gatewayapi/show/pub/v5/show/${config.show_id}/dynamic?src=weixin_mini&merchantId=6639d73239137d0001749e04&ver=4.1.3&appId=wx459c905b59f92c86&source=FROM_QUICK_ORDER`, {
     headers: {
       ...headers
     }
@@ -790,40 +837,42 @@ function getDynamic() {
     });
 }
 
-console.log("获取手机号");
-const phone = await getPhone();
+// console.log("获取手机号");
+// const phone = await getPhone();
 
 console.log('获取seesion')
-const sessions = await getSessions()
+let sessions = await getSessions()
 
 console.log('动态获取')
 const info = await getDynamic()
 
+// sessions = sessions.filter((item) => item.sessionName !== '2024-05-02 周四 19:30~21:00')
+
 console.log(`一共${sessions.length}个场次`)
 
 async function run() {
-  if (Date.now() + 1500 > new Date(config.target_time)) {
-    // await getIp();
+  if (Date.now() + 800 > new Date(config.target_time)) {
+    // await getIp()
     for (let i = 0; i < sessions.length; i++) {
       console.log(`获取第${i + 1}场次信息`);
       const arr = await getSeatPlans(sessions[i].bizShowSessionId);
       // 如果需要指定 就这么写
-      const price = arr.filter((item) => item.originalPrice === 260)
+      const price = arr.filter((item) => item.originalPrice === 300)
       if (price.length > 0) {
-        console.log('生成code')
-        const info = await generate_code(price[0].seatPlanId, price[0].seatPlanName, price[0].stdSeatPlanId, price[0].originalPrice, sessions[i], arr)
-        await getCodeList(info)
-        console.log('获取详细信息')
-        const result = await getCodeInfo(info)
-        await getShowUser()
-        if (!name) await getName(sessions[i].bizShowSessionId, price[0].seatPlanId, price[0].originalPrice, result);
-        console.log('获取方式成功～～')
-        await privileges(sessions[i].bizShowSessionId, price[0].seatPlanId);
-        await getPreOrder(sessions[i].bizShowSessionId, price[0].seatPlanId, price[0].originalPrice, result);
-        await getSearch(price[0].seatPlanId)
-        console.log('启动～')
+        // console.log('生成code')
+        // const info = await generate_code(price[0].seatPlanId, price[0].seatPlanName, price[0].stdSeatPlanId, price[0].originalPrice, sessions[i], arr)
+        // await getCodeList(info)
+        // console.log('获取详细信息')
+        // const result = await getCodeInfo(info)
+        // await getShowUser()
+        // if (!name) await getName(sessions[i].bizShowSessionId, price[0].seatPlanId, price[0].originalPrice, result);
+        // console.log('获取方式成功～～')
+        // await privileges(sessions[i].bizShowSessionId, price[0].seatPlanId);
+        // await getPreOrder(sessions[i].bizShowSessionId, price[0].seatPlanId, price[0].originalPrice, result);
+        // await getSearch(price[0].seatPlanId)
+        // console.log('启动～')
         poll(sessions[i].bizShowSessionId, price[0].seatPlanId, price[0].originalPrice, price[0].seatPlanName, sessions[i].sessionName);
-        poll(sessions[i].bizShowSessionId, price[0].seatPlanId, price[0].originalPrice, price[0].seatPlanName, sessions[i].sessionName);
+        // poll(sessions[i].bizShowSessionId, price[0].seatPlanId, price[0].originalPrice, price[0].seatPlanName, sessions[i].sessionName);
       } else {
         console.log('下错订单啦')
       }

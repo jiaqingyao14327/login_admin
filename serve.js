@@ -251,12 +251,14 @@ app.get('/qrcode', async (req, res) => {
     }
 })
 
-const dataFilePath = path.join('./data.json');
+// const dataFilePath = path.join('./data.json');
 
- // 初始化数据数组
- let data = [];
+// 初始化数据数组
+let data = [];
 
 app.get('/get-source', (req, res) => {
+    const source = req.query.source;
+    const dataFilePath = path.join(`./data-${source}.json`);
     // 从文件加载数据（如果文件存在）
     if (fs.existsSync(dataFilePath)) {
         data = JSON.parse(fs.readFileSync(dataFilePath, 'utf8'));
@@ -267,11 +269,12 @@ app.get('/get-source', (req, res) => {
 app.post('/add-source', (req, res) => {
     const newItem = req.body;
     data.push(newItem);
-    saveDataToFile();
+    saveDataToFile(newItem.source);
     res.status(200).send(newItem);
 })
 
-function saveDataToFile() {
+function saveDataToFile(source) {
+    const dataFilePath = path.join(`./data-${source}.json`);
     fs.writeFileSync(dataFilePath, JSON.stringify(data), 'utf8');
 }
 
@@ -290,6 +293,178 @@ app.get('/clear-fwd', (req, res) => {
             });
         }
     });
+})
+
+
+// 定义POST接口
+app.post('/submit-pxq', (req, res) => {
+    const data = req.body;
+    // 处理接收到的数据
+    console.log('Received data:', data);
+    fs.appendFileSync('data.txt', `${JSON.stringify(data.token)},\n`, 'utf8', function (err) {
+        if (err) {
+            console.error(err);
+            res.end('Error writing file');
+        } else {
+            res.end('Data received');
+        }
+    });
+
+    // 返回响应
+    res.status(200).send({
+        comments: "成功",
+        statusCode: 200
+    });
+});
+
+app.post('/getCode-pxq', async (req, res) => {
+    const data = req.body;
+    try {
+        const response = await axios({
+            headers: {
+                'terminal-src': 'ZIJIE_MINI',
+                'src': 'zijie_mini',
+                'merchant-id': '6374b05d0047010001566388',
+                'ver': '4.2.5',
+                'User-Agent': 'Mozilla/5.0 (Linux; Android 11; KB2000 Build/RP1A.201005.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/117.0.0.0 Mobile Safari/537.36 aweme/29.4.0 ToutiaoMicroApp/3.21.0 PluginVersion/29409006',
+                'referer': 'https://tmaservice.developer.toutiao.com/?appid=tt95f9e3440ac6759401&version=4.2.5',
+                'x-metasec-bypass-ttnet-features': '1',
+                'x-tt-bypass-dp': '1',
+                'bypass-boe': '1',
+                'X-Neptune': '-8|50:51:59:00:09:20:21:30:40:47:49:39:22:29',
+                'Content-Type': 'application/json',
+                'Host': '6374b05d0047010001566388.caiyicloud.com',
+                'Cookie': 'acw_tc=76b20fee17137079971111731e3072b20ddabb1c2b68a3e42b5b5329b80fdc'
+            },
+            method: 'post',
+            url: 'https://6374b05d0047010001566388.caiyicloud.com/cyy_gatewayapi/user/pub/v3/send_verify_code',
+            data: JSON.stringify({
+                'src': 'zijie_mini',
+                'merchantId': '6374b05d0047010001566388',
+                'ver': '4.2.5',
+                'appId': 'tt95f9e3440ac6759401',
+                'verifyCodeUseType': 'USER_LOGIN',
+                'cellphone': data.phone,
+                'messageType': 'MOBILE',
+                'token': data.token
+            }),
+        })
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch data from the target server' });
+    }
+})
+
+app.post('/photo-pxq', async (req, res) => {
+    const data = req.body;
+    try {
+        const response = await axios({
+            headers: {
+                'terminal-src': 'ZIJIE_MINI',
+                'src': 'zijie_mini',
+                'merchant-id': '6374b05d0047010001566388',
+                'ver': '4.2.5',
+                'User-Agent': 'Mozilla/5.0 (Linux; Android 11; KB2000 Build/RP1A.201005.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/117.0.0.0 Mobile Safari/537.36 aweme/29.4.0 ToutiaoMicroApp/3.21.0 PluginVersion/29409006',
+                'referer': 'https://tmaservice.developer.toutiao.com/?appid=tt95f9e3440ac6759401&version=4.2.5',
+                'x-metasec-bypass-ttnet-features': '1',
+                'x-tt-bypass-dp': '1',
+                'bypass-boe': '1',
+                'X-Neptune': '-8|50:51:59:00:09:20:21:30:40:47:49:39:22:29',
+                'Content-Type': 'application/json',
+                'Host': '6374b05d0047010001566388.caiyicloud.com',
+                'Cookie': 'acw_tc=76b20fee17137079971111731e3072b20ddabb1c2b68a3e42b5b5329b80fdc'
+            },
+            method: 'post',
+            url: 'https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/user/pub/v3/generate_photo_code',
+            data: JSON.stringify({
+                'src': 'zijie_mini',
+                'merchantId': '6374b05d0047010001566388',
+                'ver': '4.2.5',
+                'appId': 'tt95f9e3440ac6759401',
+                'cellphone': data.phone,
+                'verifyCodeUseType': 'USER_LOGIN',
+                'messageType': 'MOBILE'
+            }),
+        })
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch data from the target server' });
+    }
+})
+
+app.post('/login-pxq', async (req, res) => {
+    const data = req.body;
+    try {
+        const response = await axios({
+            headers: {
+                'terminal-src': 'ZIJIE_MINI',
+                'src': 'zijie_mini',
+                'merchant-id': '6374b05d0047010001566388',
+                'ver': '4.2.5',
+                'User-Agent': 'Mozilla/5.0 (Linux; Android 11; KB2000 Build/RP1A.201005.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/117.0.0.0 Mobile Safari/537.36 aweme/29.4.0 ToutiaoMicroApp/3.21.0 PluginVersion/29409006',
+                'referer': 'https://tmaservice.developer.toutiao.com/?appid=tt95f9e3440ac6759401&version=4.2.5',
+                'x-metasec-bypass-ttnet-features': '1',
+                'x-tt-bypass-dp': '1',
+                'bypass-boe': '1',
+                'X-Neptune': '-8|50:51:59:00:09:20:21:30:40:47:49:39:22:29',
+                'Content-Type': 'application/json',
+                'Host': '6374b05d0047010001566388.caiyicloud.com',
+                'Cookie': 'acw_tc=76b20fee17137079971111731e3072b20ddabb1c2b68a3e42b5b5329b80fdc'
+            },
+            method: 'post',
+            url: 'https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/user/pub/v3/login_or_register',
+            data: JSON.stringify({
+                'src': 'zijie_mini',
+                'merchantId': '6374b05d0047010001566388',
+                'ver': '4.2.5',
+                'appId': 'tt95f9e3440ac6759401',
+                'cellphone': data.phone,
+                'verifyCode': data.code,
+                'unionId': '1697c9fc-0d4a-578c-bd03-64dde50fada7',
+                'openId': '_000_tfwUv0kvGw_6_QQBp4u0F3RDtOT9_s5'
+            }),
+        })
+        res.json(response.data);
+        // res.status(200).send('Data received successfully.');
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch data from the target server' });
+    }
+})
+
+app.post('/search-pxq', async (req, res) => {
+    const data = req.body;
+    console.log(data)
+    try {
+        const response = await axios.get('https://6374b05d0047010001566388.caiyicloud.com/cyy_gatewayapi/home/pub/v3/show/search/associate', {
+            params: {
+                'cityId': '1101',
+                'keyword': data.keyword,
+                'src': 'zijie_mini',
+                'merchantId': '6374b05d0047010001566388',
+                'ver': '4.2.5',
+                'appId': 'tt95f9e3440ac6759401'
+            },
+            headers: {
+                'terminal-src': 'ZIJIE_MINI',
+                'src': 'zijie_mini',
+                'merchant-id': '6374b05d0047010001566388',
+                'ver': '4.2.5',
+                'User-Agent': 'Mozilla/5.0 (Linux; Android 11; KB2000 Build/RP1A.201005.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/117.0.0.0 Mobile Safari/537.36 aweme/29.4.0 ToutiaoMicroApp/3.21.0 PluginVersion/29409006',
+                'referer': 'https://tmaservice.developer.toutiao.com/?appid=tt95f9e3440ac6759401&version=4.2.5',
+                'x-metasec-bypass-ttnet-features': '1',
+                'x-tt-bypass-dp': '1',
+                'bypass-boe': '1',
+                'Content-Type': 'application/json',
+                'X-Neptune': '-8|50:51:59:00:09:20:21:30:40:47:49:39:22:29',
+                'Host': '6374b05d0047010001566388.caiyicloud.com',
+                'Cookie': 'acw_tc=76b20fee17137079971111731e3072b20ddabb1c2b68a3e42b5b5329b80fdc'
+            }
+        })
+        res.json(response.data);
+        // res.status(200).send('Data received successfully.');
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch data from the target server' });
+    }
 })
 
 
