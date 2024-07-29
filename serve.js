@@ -262,6 +262,8 @@ app.get('/get-source', (req, res) => {
     // 从文件加载数据（如果文件存在）
     if (fs.existsSync(dataFilePath)) {
         data = JSON.parse(fs.readFileSync(dataFilePath, 'utf8'));
+    } else {
+        data = []
     }
     res.send(data);
 })
