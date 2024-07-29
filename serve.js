@@ -271,6 +271,11 @@ app.get('/get-source', (req, res) => {
 app.post('/add-source', (req, res) => {
     const newItem = req.body;
     const dataFilePath = path.join(`./data-${newItem.source}.json`);
+    if (fs.existsSync(dataFilePath)) {
+        data = JSON.parse(fs.readFileSync(dataFilePath, 'utf8'));
+    } else {
+        data = []
+    }
     data.push(newItem);
     saveDataToFile(dataFilePath);
     res.status(200).send(newItem);
