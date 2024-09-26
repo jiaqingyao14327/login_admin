@@ -38,22 +38,27 @@ app.post('/getCode', async (req, res) => {
     try {
         const response = await axios({
             headers: {
-                'Content-Type': 'application/json',
-                'src': 'WEB',
-                'Referer': 'https://63739735004701000156623a.caiyicloud.com/login',
-                'terminal-src': 'WEB',
-                'access-token': '',
-                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
-                'ver': '4.1.2-20240305183007'
+                'Host': '65373d6e95c3170001074c57.caiyicloud.com',
+                'Connection': 'keep-alive',
+                'terminal-src': 'WEIXIN_MINI',
+                'content-type': 'application/json',
+                'src': 'weixin_mini',
+                'ver': '4.18.1',
+                'merchant-id': '65373d6e95c3170001074c57',
+                'front-trace-id': 'm1ipraf6538bwbr1dmg',
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.52(0x18003422) NetType/WIFI Language/zh_CN',
+                'Referer': 'https://servicewechat.com/wxe3489c9feaf8f361/37/page-frame.html'
             },
             method: 'post',
-            url: 'https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/user/pub/v3/send_verify_code',
+            url: 'https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/user/pub/v5/send_verify_code',
             data: JSON.stringify({
-                'src': 'WEB',
-                'ver': '4.1.2-20240305183007',
+                'src': 'weixin_mini',
+                'merchantId': '65373d6e95c3170001074c57',
+                'ver': '4.18.1',
+                'appId': 'wxe3489c9feaf8f361',
                 'verifyCodeUseType': 'USER_LOGIN',
-                'cellphone': data.phone,
                 'messageType': 'MOBILE',
+                'cellphone': data.phone,
                 'token': data.token
             }),
         })
@@ -68,30 +73,27 @@ app.post('/photo', async (req, res) => {
     try {
         const response = await axios({
             headers: {
-                'Accept': '*/*',
-                'Accept-Language': 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Host': '65373d6e95c3170001074c57.caiyicloud.com',
                 'Connection': 'keep-alive',
-                'Content-Type': 'application/json',
-                'Cookie': 'sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%2261927327aa62f50fee59b1aa%22%2C%22first_id%22%3A%2218df951b5a367e-04f02096947915-296e4933-400760-18df951b5a423d0%22%2C%22props%22%3A%7B%22%24latest_traffic_source_type%22%3A%22%E7%9B%B4%E6%8E%A5%E6%B5%81%E9%87%8F%22%2C%22%24latest_search_keyword%22%3A%22%E6%9C%AA%E5%8F%96%E5%88%B0%E5%80%BC_%E7%9B%B4%E6%8E%A5%E6%89%93%E5%BC%80%22%2C%22%24latest_referrer%22%3A%22%22%2C%22platform%22%3A%22H5%22%2C%22merchantDomain%22%3A%2262396a68ed218560363ff18c.caiyicloud.com%22%2C%22product%22%3A%22CYY%22%7D%2C%22identities%22%3A%22eyIkaWRlbnRpdHlfY29va2llX2lkIjoiMThkZjk1MWI1YTM2N2UtMDRmMDIwOTY5NDc5MTUtMjk2ZTQ5MzMtNDAwNzYwLTE4ZGY5NTFiNWE0MjNkMCIsIiRpZGVudGl0eV9sb2dpbl9pZCI6IjYxOTI3MzI3YWE2MmY1MGZlZTU5YjFhYSJ9%22%2C%22history_login_id%22%3A%7B%22name%22%3A%22%24identity_login_id%22%2C%22value%22%3A%2261927327aa62f50fee59b1aa%22%7D%2C%22%24device_id%22%3A%2218df951b5a367e-04f02096947915-296e4933-400760-18df951b5a423d0%22%7D; acw_tc=76b20ff617103164444632627e6f10f68dedccc4ba626c8c275e82340a6e75',
-                'Origin': 'https://63739735004701000156623a.caiyicloud.com',
-                'Referer': 'https://63739735004701000156623a.caiyicloud.com/login',
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'same-origin',
-                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
-                'access-token': '',
-                'src': 'H5',
-                'terminal-src': 'H5',
-                'ver': '4.1.2-20240305183007'
+                'terminal-src': 'WEIXIN_MINI',
+                'content-type': 'application/json',
+                'src': 'weixin_mini',
+                'ver': '4.18.1',
+                'merchant-id': '65373d6e95c3170001074c57',
+                'front-trace-id': 'm1ipramx5wjfshwql4s',
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.52(0x18003422) NetType/WIFI Language/zh_CN',
+                'Referer': 'https://servicewechat.com/wxe3489c9feaf8f361/37/page-frame.html'
             },
             method: 'post',
-            url: 'https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/user/pub/v3/generate_photo_code',
+            url: 'https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/user/pub/v3/generate_photo_code',
             data: JSON.stringify({
-                'src': 'H5',
-                'ver': '4.1.2-20240305183007',
                 'cellphone': data.phone,
+                'src': 'weixin_mini',
+                'merchantId': '65373d6e95c3170001074c57',
+                'ver': '4.18.1',
+                'appId': 'wxe3489c9feaf8f361',
                 'verifyCodeUseType': 'USER_LOGIN',
-                'messageType': 'MOBILE'
+                'messageType': 'MOBILE',
             }),
         })
         res.json(response.data);
@@ -105,29 +107,27 @@ app.post('/login', async (req, res) => {
     try {
         const response = await axios({
             headers: {
-                'Accept': '*/*',
-                'Accept-Language': 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Host': '65373d6e95c3170001074c57.caiyicloud.com',
                 'Connection': 'keep-alive',
-                'Content-Type': 'application/json',
-                'Cookie': 'sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%2261927327aa62f50fee59b1aa%22%2C%22first_id%22%3A%2218df951b5a367e-04f02096947915-296e4933-400760-18df951b5a423d0%22%2C%22props%22%3A%7B%22%24latest_traffic_source_type%22%3A%22%E7%9B%B4%E6%8E%A5%E6%B5%81%E9%87%8F%22%2C%22%24latest_search_keyword%22%3A%22%E6%9C%AA%E5%8F%96%E5%88%B0%E5%80%BC_%E7%9B%B4%E6%8E%A5%E6%89%93%E5%BC%80%22%2C%22%24latest_referrer%22%3A%22%22%2C%22platform%22%3A%22H5%22%2C%22merchantDomain%22%3A%2262396a68ed218560363ff18c.caiyicloud.com%22%2C%22product%22%3A%22CYY%22%7D%2C%22identities%22%3A%22eyIkaWRlbnRpdHlfY29va2llX2lkIjoiMThkZjk1MWI1YTM2N2UtMDRmMDIwOTY5NDc5MTUtMjk2ZTQ5MzMtNDAwNzYwLTE4ZGY5NTFiNWE0MjNkMCIsIiRpZGVudGl0eV9sb2dpbl9pZCI6IjYxOTI3MzI3YWE2MmY1MGZlZTU5YjFhYSJ9%22%2C%22history_login_id%22%3A%7B%22name%22%3A%22%24identity_login_id%22%2C%22value%22%3A%2261927327aa62f50fee59b1aa%22%7D%2C%22%24device_id%22%3A%2218df951b5a367e-04f02096947915-296e4933-400760-18df951b5a423d0%22%7D; acw_tc=76b20ff617103164444632627e6f10f68dedccc4ba626c8c275e82340a6e75',
-                'Origin': 'https://63739735004701000156623a.caiyicloud.com',
-                'Referer': 'https://63739735004701000156623a.caiyicloud.com/login',
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'same-origin',
-                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
-                'access-token': '',
-                'src': 'H5',
-                'terminal-src': 'H5',
-                'ver': '4.1.2-20240305183007'
+                'terminal-src': 'WEIXIN_MINI',
+                'content-type': 'application/json',
+                'src': 'weixin_mini',
+                'ver': '4.18.1',
+                'merchant-id': '65373d6e95c3170001074c57',
+                'front-trace-id': 'm1iprhrfauuqtt8p9uv',
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.52(0x18003422) NetType/WIFI Language/zh_CN',
+                'Referer': 'https://servicewechat.com/wxe3489c9feaf8f361/37/page-frame.html'
             },
             method: 'post',
-            url: 'https://63739735004701000156623a.caiyicloud.com/cyy_gatewayapi/user/pub/v3/login_or_register',
+            url: 'https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/user/pub/v3/wx/mini/cellphone_login_or_register',
             data: JSON.stringify({
-                'src': 'H5',
-                'ver': '4.1.2-20240305183007',
+                'src': 'weixin_mini',
+                'merchantId': '65373d6e95c3170001074c57',
+                'ver': '4.18.1',
+                'appId': 'wxe3489c9feaf8f361',
                 'cellphone': data.phone,
-                'verifyCode': data.code
+                'verifyCode': data.code,
+                'openId': 'oyOih609-PKxOzoaGFehQ7n4mhIM'
             }),
         })
         res.json(response.data);

@@ -8,7 +8,7 @@ function tip(...args) {
 }
 
 userTokens.filter(Boolean).forEach((token, index) => {
-  const childProcess = exec(`token=${token.token} phone=${token.phone} node main.js`);
+  const childProcess = exec(`token=${token.token} phone=${token.phone} index=${index} node main.js`);
   childProcess.stdout.on("data", async (data) => {
     const date = new Date();
     tip(`${new Date().toLocaleString()}.${date.getMilliseconds().toFixed(3)}`);
