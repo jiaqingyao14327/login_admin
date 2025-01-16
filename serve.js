@@ -8,10 +8,19 @@ import fetch from 'node-fetch';
 import request from "request";
 import util from "util";
 import httpProxy from 'http-proxy'
+import cors from 'cors'
 
 const port = 80;
 const app = express();
 const proxy = httpProxy.createProxyServer();
+
+app.use(
+    cors({
+        origin: "http://121.199.162.217:8080", // 允许的来源
+        methods: "GET,POST,OPTIONS", // 允许的方法
+        allowedHeaders: "Content-Type,Authorization", // 允许的头部
+    })
+);
 
 // 模拟获取动态代理 IP 的方法
 async function getDynamicProxyIp() {
