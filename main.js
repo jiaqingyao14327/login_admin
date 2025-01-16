@@ -1,5 +1,3 @@
-import HttpsProxyAgent from "http-proxy-agent";
-import { HttpProxyAgent } from "http-proxy-agent";
 import axios from "axios";
 import request from "request";
 import util from "util";
@@ -7,34 +5,28 @@ import config from "./config.js";
 import fetch from "node-fetch";
 import fs from "fs";
 
-// 配置用户名和密码
-let username = "d2398362891";
-let password = "3j5rklnm";
-
 const token = process.env.token;
-const userPhone = process.env.phone;
+const user_phone = process.env.phone;
 const index = Number(process.env.index);
 let name = "E_TICKET";
 
 const headers = {
-  'host': '65373d6e95c3170001074c57.caiyicloud.com',
-  'content-type': 'application/json',
-  'accept': '*/*',
-  'merchant-id': '65373d6e95c3170001074c57',
-  'src': 'weixin_mini',
-  'accept-language': 'zh-CN,zh-Hans;q=0.9',
-  'ver': '4.18.1',
-  'access-token': token,
-  'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E217 MicroMessenger/6.8.0(0x16080000) NetType/WIFI Language/en Branch/Br_trunk MiniProgramEnv/Mac',
-  'referer': 'https://servicewechat.com/wxe3489c9feaf8f361/37/page-frame.html',
-  'front-trace-id': 'm1hrbw9zpk8iso3k9jl',
+  'Host': '65373d6e95c3170001074c57.caiyicloud.com',
+  'Connection': 'keep-alive',
   'terminal-src': 'WEIXIN_MINI',
-  'Connection': 'close'
+  'content-type': 'application/json',
+  'src': 'weixin_mini',
+  'ver': '4.21.2',
+  'access-token': token,
+  'merchant-id': '65373d6e95c3170001074c57',
+  'front-trace-id': 'm33wp6bbhmv4flpv0ht',
+  'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.53(0x1800352c) NetType/WIFI Language/zh_CN',
+  'Referer': 'https://servicewechat.com/wxe3489c9feaf8f361/42/page-frame.html'
 };
 
 function getPhone() {
   return fetch(
-    "https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/user/buyer/v3/profile?src=H5&ver=3.3.5",
+    "https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/user/buyer/v3/profile",
     {
       headers: {
         ...headers,
@@ -62,11 +54,12 @@ async function createOrder(
   names,
   sessionName
 ) {
+  ip_index++
   const data = {
     'src': 'weixin_mini',
     'merchantId': '65373d6e95c3170001074c57',
     // 'channelId': '663c7e38f127a7e5d51ac811',
-    'ver': '4.18.1',
+    'ver': '4.21.2',
     'appId': 'wxe3489c9feaf8f361',
     locationParam: {
       locationCityId: "1101",
@@ -106,9 +99,7 @@ async function createOrder(
     many2OneAudience: {},
     addressParam: {},
   };
-
-  await getIp()
-  
+    
   let options = ip
     ? {
       url: "https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/trade/buyer/order/v5/create_order",
@@ -117,7 +108,7 @@ async function createOrder(
       },
       proxy: util.format(
         "http://%s",
-        ip
+        `${ip[ip_index].ip}:${ip[ip_index].port}`
       ),
       method: "POST",
       json: data,
@@ -131,61 +122,75 @@ async function createOrder(
       json: data,
     };
 
-  return new Promise((resolve, reject) => {
-    request(options, async (error, res, body) => {
-      if (!error && res.statusCode == 200) {
-        fs.appendFileSync("请求日志.txt", `${userPhone}下单--${names}${price}--${sessionName}--${JSON.stringify(body.comments)}\n`, (err) => {
-          if (err) {
-            console.log(err);
-            return;
-          }
-        });
-        if (body.statusCode === 200) {
-          fs.appendFileSync("下单成功.txt", `${userPhone}下单--${names}${price}--${sessionName}--成功\n`, (err) => {
-            if (err) {
-              console.log(err);
-              return;
+    const timer = setInterval(async() => {
+      if (Date.now() + 1000 > new Date(config.target_time)) {
+        clearInterval(timer)
+        return new Promise((resolve, reject) => {
+          request(options, async (error, res, body) => {
+            if (!error && res.statusCode == 200) {
+              const date = new Date();
+              fs.appendFileSync("请求日志.txt", `${new Date().toLocaleString()}.${date.getMilliseconds().toFixed(3)}\n${user_phone}下单--${names}${price}--${sessionName}--${JSON.stringify(body.comments)}\n`, (err) => {
+                if (err) {
+                  console.log(err);
+                  return;
+                }
+              });
+              if (body.statusCode === 200) {
+                fs.appendFileSync("下单成功.txt", `${user_phone}下单--${names}${price}--${sessionName}--成功\n`, (err) => {
+                  if (err) {
+                    console.log(err);
+                    return;
+                  }
+                });
+                console.log("下单成功", user_phone);
+                // notifyDingDing(sessionName);
+                getPaySuccess(body.data.unPaidTransactionIds, price, sessionName, names);
+                resolve(body);
+              } else if (
+                body.comments.includes("已购买过") ||
+                body.comments.includes("您有待支付订单")
+              ) {
+                console.log("快去看看订单吧", body.comments);
+                resolve(body);
+                return true;
+              }
+              if (ip_index === ip.length - 2) {
+                ip_index = -1
+                await getIp()
+              }
+              console.log(body.comments);
+              await createOrder(
+                seat_plan_id,
+                price,
+                session_id,
+                names,
+                sessionName
+              )
+              // reject("下单失败");
+            } else {
+              await createOrder(
+                seat_plan_id,
+                price,
+                session_id,
+                names,
+                sessionName
+              )
             }
           });
-          console.log("下单成功", userPhone);
-          notifyDingDing(sessionName);
-          getPaySuccess(body.data.unPaidTransactionIds, price, sessionName, names);
-          resolve(body);
-        } else if (
-          body.comments.includes("已购买过") ||
-          body.comments.includes("您有待支付订单")
-        ) {
-          console.log("快去看看订单吧", body.comments);
-          resolve(body);
-        }
-        console.log(body.comments);
-        await createOrder(
-          seat_plan_id,
-          price,
-          session_id,
-          names,
-          sessionName
-        )
-        // reject("下单失败");
+        });
       } else {
-        await createOrder(
-          seat_plan_id,
-          price,
-          session_id,
-          names,
-          sessionName
-        )
+        console.log('等待中～')
+        await sleep(100)
       }
-    });
-  });
+    }, 100)
 }
 
 function getPaySuccess(arr, price, sessionName, names) {
   const data = {
     'src': 'weixin_mini',
     'merchantId': '65373d6e95c3170001074c57',
-    'channelId': '663c7e38f127a7e5d51ac811',
-    'ver': '4.18.1',
+    // 'channelId': '663c7e38f127a7e5d51ac811',
+    'ver': '4.21.2',
     'appId': 'wxe3489c9feaf8f361',
     transactionIds: arr,
     platform: "WEIXIN_MINI",
@@ -208,7 +213,7 @@ function getPaySuccess(arr, price, sessionName, names) {
           await getAudiences(arr);
           fs.appendFileSync(
             "支付宝支付链接.txt",
-            `\n${userPhone}-${names}${price}-${sessionName}-${config.audience_number}张`,
+            `\n${user_phone}-${names}${price}-${sessionName}-${config.audience_number}张`,
             (err) => {
               if (err) {
                 console.log(err);
@@ -265,11 +270,14 @@ function getAudiences(arr) {
 
 
 function getIp() {
+  console.log('获取Ip')
   return axios({
-    url: "http://api2.xkdaili.com/tools/XApi.ashx?apikey=XK9407CE397DDBA50D65&qty=1&format=txt&split=0&sign=bc069e1c951656fe91de50073f8269ed",
+    // 'http://api2.xkdaili.com/tools/XApi.ashx?apikey=XKFDFED582CB1878F767&qty=50&format=json&split=0&sign=a324f08be26bae56385e6cf2f8fb924f' 17641222767
+    // 'http://api2.xkdaili.com/tools/XApi.ashx?apikey=XK9407CE397DDBA50D65&qty=1&format=txt&split=0&sign=bc069e1c951656fe91de50073f8269ed' 19110272767
+    url: 'http://api2.xkdaili.com/tools/XApi.ashx?apikey=XK9407CE397DDBA50D65&qty=50&format=json&split=0&sign=bc069e1c951656fe91de50073f8269ed',
     method: "get",
   }).then((res) => {
-    ip = res.data.replace('\n', '');
+    ip = res.data.data;
   }).catch((err) => {
   });
 }
@@ -285,7 +293,7 @@ function notifyDingDing(sessionName) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        content: `${userPhone}----${sessionName}硬核喜剧下单成功啦，快去付款吧`,
+        content: `${phone}----${sessionName}硬核喜剧下单成功啦，快去付款吧`,
         content_type: 1,
         namespace: "你有一笔意外之财的通知",
         receiver_list: ["jiaqingyao14327"],
@@ -309,6 +317,9 @@ function getAudienceList() {
       (res) => {
         if (res.statusCode === 200) {
           const audiencesInfo = res.data.slice(0, config.audience_number);
+          if (audiencesInfo.length !== config.audience_number) {
+            throw Error("观影人信息错误");
+          }
           audiencesInfo.forEach((user) => {
             console.log(`观影人:${user.name}`);
           });
@@ -332,65 +343,7 @@ const generateId = audiences.map((item) => ({
   audienceId: item.id,
 }))
 
-let express_fee = "";
-
-
 let venueId = "";
-function getName(session_id, seat_plan_id, price, result) {
-  const data = {
-    'src': 'weixin_mini',
-    'merchantId': '65373d6e95c3170001074c57',
-    'ver': '4.1.3',
-    'appId': 'wx459c905b59f92c86',
-    'priorityId': '',
-    'items': [
-      {
-        'sku': {
-          'skuId': seat_plan_id,
-          'skuType': 'SINGLE',
-          'ticketPrice': price,
-          'qty': config.audience_number,
-          ticketItems: result.saleAssistantJson.shoppingCart.operations.map((i) => ({
-            id: i.ticketGenerateId,
-          }))
-        },
-        'spu': {
-          'showId': config.show_id,
-          'sessionId': session_id
-        }
-      }
-    ],
-  };
-
-  return fetch(
-    "https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/trade/buyer/order/v5/pre_order",
-    {
-      headers: {
-        ...headers,
-      },
-      body: JSON.stringify(data),
-      method: "POST",
-    }
-  )
-    .then((res) => res.json())
-    .then(
-      (res) => {
-        if (res.statusCode === 200) {
-          name = res.data.supportDeliveries[0].name;
-          venueId = res.data.shows[0].venue.venueId;
-          return true;
-        } else {
-          console.log(res.comments)
-          return getName(session_id, seat_plan_id, price, result)
-        }
-        // throw Error("获取方式失败");
-      },
-      (err) => {
-        console.log(err)
-        throw err;
-      }
-    )
-}
 
 function getSessions() {
   return fetch(`https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/show/pub/v3/show/${config.show_id}/sessions_from_marketing_countdown?src=weixin_mini&merchantId=65373d6e95c3170001074c57&ver=4.18.1&appId=wxe3489c9feaf8f361`, {
@@ -411,151 +364,8 @@ function getSessions() {
   );
 }
 
-function showBuyer() {
-  return fetch(
-    `https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/show/buyer/v3/shows/${config.show_id}/seat_plan_age_limit_list?src=weixin_mini&merchantId=6267a80eed218542786f1494&ver=3.15.1&appId=wxad60dd8123a62329&showId=${config.show_id}`,
-    {
-      headers: {
-        ...headers,
-      },
-    }
-  )
-    .then((res) => res.json())
-    .then(
-      (res) => {
-        if (res.statusCode === 200) {
-          return true;
-        }
-        throw Error("获取方式失败");
-      },
-      (err) => {
-        throw err;
-      }
-    );
-}
-
-function privileges(session_id, seat_plan_id) {
-  return fetch(
-    "https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/user/buyer/order/v3/privileges",
-    {
-      method: "POST",
-      headers: {
-        ...headers,
-      },
-      body: JSON.stringify({
-        'src': 'weixin_mini',
-        'merchantId': '65373d6e95c3170001074c57',
-        'ver': '4.1.3',
-        'appId': 'wx459c905b59f92c86',
-        itemList: [
-          {
-            showId: config.show_id,
-            sessionId: session_id,
-            seatPlanId: seat_plan_id,
-            showType: "TalkShow",
-          },
-        ],
-      }),
-    }
-  )
-    .then((res) => res.json())
-    .then(
-      (res) => {
-        if (res.statusCode === 200) {
-          return true;
-        }
-        throw Error("获取方式失败");
-      },
-      (err) => {
-        throw err;
-      }
-    );
-}
-
-function getPreOrder(sessionId, seatPlanIds, price, result) {
-  return fetch(
-    "https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/show/buyer/v5/coupons/pre_order",
-    {
-      method: "POST",
-      headers: {
-        ...headers,
-      },
-      body: JSON.stringify({
-        'src': 'weixin_mini',
-        'merchantId': '65373d6e95c3170001074c57',
-        'ver': '4.1.3',
-        'appId': 'wx459c905b59f92c86',
-        preOrderCouponPackageRequests: [
-          {
-            showId: config.show_id,
-            showType: "TalkShow",
-            venueId: venueId,
-            preOrderSessions: [
-              {
-                sessionId: sessionId,
-                seatPlanIds: [seatPlanIds],
-              },
-            ],
-          },
-        ],
-        preOrderCouponRequest: {
-          items: [
-            {
-              skus: [
-                {
-                  seatPlanId: seatPlanIds,
-                  sessionId: sessionId,
-                  showId: config.show_id,
-                  skuId: seatPlanIds,
-                  skuType: "SINGLE",
-                  ticketPrice: price,
-                  qty: config.audience_number,
-                  deliverMethod: name,
-                  ticketItems: result.saleAssistantJson.shoppingCart.operations.map((i) => ({
-                    id: i.ticketGenerateId,
-                  }))
-                },
-              ],
-              spu: {
-                id: config.show_id,
-                spuType: "SINGLE",
-              },
-            },
-          ],
-          price: price + ".00",
-          onlySearchCanUse: false,
-          src: 'H5'
-        },
-      }),
-    }
-  )
-    .then((res) => res.json())
-    .then(
-      (res) => {
-        if (res.statusCode === 200) {
-          return true;
-        }
-        throw Error("获取方式失败");
-      },
-      (err) => {
-        throw err;
-      }
-    )
-}
-
-
 async function poll(session_id, seatPlan_id, price, names, sessionName) {
-  let MaxCount = config.max_count;
   (async function repeat() {
-    if (MaxCount === 0) {
-      return true;
-    }
-    const beginTime = new Date(config.target_time);
-    if (Date.now() + 100 < beginTime) {
-      await sleep(0.1);
-    }
-
-    MaxCount--;
     try {
       console.log("创建订单");
       await createOrder(
@@ -580,25 +390,6 @@ async function sleep(second) {
   });
 }
 
-
-function getSearch(seatPlan_id) {
-  return fetch(`https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/trade/buyer/v3/spus/tied_sale_search?src=weixin_mini&merchantId=65373d6e95c3170001074c57&ver=4.1.3&appId=wx459c905b59f92c86&length=1000&offset=0&bizShowIdList=${config.show_id}&bizSeatPlanIds=${seatPlan_id}`, {
-    headers: {
-      ...headers
-    }
-  }).then((res) => res.json())
-    .then(
-      (res) => {
-        if (res.statusCode === 200) {
-          return true;
-        }
-        throw Error("获取方式失败");
-      },
-      (err) => {
-        throw err;
-      }
-    );
-}
 
 function getSeatPlans(session) {
   return fetch(`https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/show/pub/v3/show/${config.show_id}/show_session/${session}/seat_plans_from_marketing_countdown?src=weixin_mini&merchantId=65373d6e95c3170001074c57&ver=4.18.1&appId=wxe3489c9feaf8f361`, {
@@ -830,8 +621,8 @@ function getDynamic() {
     });
 }
 
-// console.log("获取手机号");
-// const phone = await getPhone();
+console.log("获取手机号");
+const phone = await getPhone();
 
 console.log('获取seesion')
 let sessions = await getSessions()
@@ -851,11 +642,21 @@ for (let i = 0; i < sessions.length; i++) {
   listMap.set(i, arr)
 }
 
+let ip_index = -1
+
+
+const timer = setInterval(async () => {
+  if (Date.now() + 20000 > new Date(config.target_time)) {
+    getIp()
+    clearInterval(timer)
+  }
+}, 100)
+
 async function run() {
-  if (Date.now() + 1000 > new Date(config.target_time)) {
+  if (Date.now() + 4000 > new Date(config.target_time)) {
     for (let i = 0; i < sessions.length; i++) {
-      const arr = listMap.get(i)
-      // const two = arr.filter((item) => item.originalPrice === 220)
+      const list = listMap.get(i)
+      const arr = list.filter((item) => item.originalPrice > 380)
       for (let k = 0; k < arr.length; k++) {
         poll(sessions[i].bizShowSessionId, arr[k].seatPlanId, arr[k].originalPrice, arr[k].seatPlanName, sessions[i].sessionName);
       }

