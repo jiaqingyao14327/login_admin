@@ -7,9 +7,52 @@ import path from 'path'
 import fetch from 'node-fetch';
 import request from "request";
 import util from "util";
+import httpProxy from 'http-proxy'
 
-const app = express();
 const port = 80;
+const app = express();
+const proxy = httpProxy.createProxyServer();
+
+// 模拟获取动态代理 IP 的方法
+async function getDynamicProxyIp() {
+    // 模拟从服务或数据库中获取代理 IP
+    // 这里假设返回一个包含 IP 和端口的对象
+    const result = await axios({
+        // 'http://api2.xkdaili.com/tools/XApi.ashx?apikey=XKFDFED582CB1878F767&qty=50&format=json&split=0&sign=a324f08be26bae56385e6cf2f8fb924f' 17641222767
+        // 'http://api2.xkdaili.com/tools/XApi.ashx?apikey=XK9407CE397DDBA50D65&qty=1&format=txt&split=0&sign=bc069e1c951656fe91de50073f8269ed' 19110272767
+        url: 'http://api2.xkdaili.com/tools/XApi.ashx?apikey=XK9407CE397DDBA50D65&qty=1&format=json&split=0&sign=bc069e1c951656fe91de50073f8269ed',
+        method: "get",
+    })
+    return {
+        host: result.data.data[0].ip, // 示例代理 IP
+        port: result.data.data[0].port,             // 示例代理端口
+    };
+}
+// 中间件处理请求，动态挂载代理
+app.use(async (req, res, next) => {
+    try {
+        // 获取动态代理 IP
+        const proxyInfo = await getDynamicProxyIp();
+
+        if (!proxyInfo || !proxyInfo.host || !proxyInfo.port) {
+            return res.status(500).send("获取代理 IP 失败");
+        }
+
+        // 设置代理服务器的目标地址
+        const target = `http://${proxyInfo.host}:${proxyInfo.port}`;
+
+        // 使用 http-proxy 转发请求
+        proxy.web(req, res, { target }, (err) => {
+            if (err) {
+                console.error("代理请求失败：", err);
+                res.status(500).send("代理请求失败");
+            }
+        });
+    } catch (error) {
+        console.error("中间件处理错误：", error);
+        res.status(500).send("内部错误");
+    }
+});
 
 // 解析JSON请求体
 app.use(express.json());
