@@ -8,7 +8,6 @@ import fetch from 'node-fetch';
 import request from "request";
 import util from "util";
 import httpProxy from 'http-proxy'
-import cors from 'cors'
 
 const port = 80;
 const app = express();
